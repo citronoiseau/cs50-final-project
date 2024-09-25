@@ -1,4 +1,5 @@
 import { pageLoader, pageLoaderDeepLink } from "./pageLoader";
+import "./style.css";
 
 const getQueryParam = (param) => {
   const urlParams = new URLSearchParams(window.location.search);
