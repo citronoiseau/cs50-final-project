@@ -98,7 +98,7 @@ function gameLoop(board) {
       ball.reset(canvas);
       player1.paddle.reset(canvas);
       player2.paddle.reset(canvas);
-      ball.setSpeed(Math.random() < 0.5 ? ball.dx : -ball.dx);
+      ball.setDirection(Math.random() < 0.5 ? ball.dx : -ball.dx);
     }
     requestAnimationFrame(() => gameLoop(board));
   }

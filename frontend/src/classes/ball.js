@@ -6,16 +6,20 @@ export default class Ball {
     this.positionX = positionX;
     this.positionY = positionY;
     this.radius = radius;
+    this.speedIncrement = 0.1;
+    this.maxSpeed = 5;
   }
 
   reset(canvas) {
     this.positionX = canvas.width / 2;
     this.positionY = canvas.height / 2;
+    this.dx = 2;
+    this.dy = 2;
   }
 
-  setSpeed(speed) {
-    this.dx = speed;
-    this.dy = speed;
+  setDirection(direction) {
+    this.dx = direction;
+    this.dy = direction;
   }
 
   checkPaddleCollision(paddle) {
@@ -26,12 +30,21 @@ export default class Ball {
       this.positionY + this.radius >= paddle.y &&
       this.positionY - this.radius <= paddle.y + paddle.height
     ) {
+      if (Math.abs(this.dx) < this.maxSpeed) {
+        this.dx += this.dx > 0 ? this.speedIncrement : -this.speedIncrement;
+      }
+
+      if (Math.abs(this.dy) < this.maxSpeed) {
+        this.dy += this.dy > 0 ? this.speedIncrement : -this.speedIncrement;
+      }
+
       this.dx = -this.dx;
     }
   }
 
   moveBall(canvas, player1, player2) {
     // Check for left wall collision (Player 2 scores)
+
     if (this.positionX - this.radius <= 0) {
       player2.updateScore();
       return true;
@@ -56,6 +69,8 @@ export default class Ball {
 
     this.positionX += this.dx;
     this.positionY += this.dy;
+
+    return false;
   }
 
   // Using canvas API to create smooth game flow. Drawing a ball here.
