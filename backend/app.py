@@ -10,7 +10,7 @@ test_game_id = "aaa-aaa-aaa"
 
 app = Flask(__name__)
 socketio = SocketIO(app)
-CORS(app)
+CORS(app, resources={r"/socket.io/*": {"origins": "http://localhost:8080"}})
 
 config = {
     "CACHE_TYPE": "FileSystemCache",
@@ -44,7 +44,7 @@ def new_game():
         id = f"{rand_xyz()}-{rand_xyz()}-{rand_xyz()}"
     game = GameInfo(id)
     player1_id = test_uuid("a") if game.id == test_game_id else str(uuid4())
-    player1 = Player(player1_id, "Player 1")
+    player1 = Player(player1_id, "Player 1", 0)
     game.players[player1.id] = player1
     game_cache.set(id, game)
     return {"id": id, "player": player1}
@@ -62,10 +62,20 @@ def join_game(id: str):
     game_cache.set(id, game)
     return {"id": id, "player": player2}
 
+
+@socketio.on('connect')
+def handle_connect():
+    game_id = request.args.get('game_id')  # Extract game_id from the query parameters
+    if not game_id or not game_cache.has(game_id):
+        print(f"Game ID {game_id} is invalid or missing.")
+        disconnect()  # Disconnect the client if game_id is invalid
+    else:
+        print(f"Player connected to game {game_id}")
+
 # Handle paddle and ball movement
 @socketio.on("update_game_state_left")
 def handle_left_player_update(data):
-    game_id = data["game_id"]
+    game_id = request.args.get('game_id')  
     paddle_data = data["paddle"] 
     ball_data = data["ball"] 
     
@@ -86,7 +96,7 @@ def handle_left_player_update(data):
 
 @socketio.on("update_game_state_right")
 def handle_right_player_update(data):
-    game_id = data["game_id"]
+    game_id = request.args.get('game_id')  
     paddle_data = data["paddle"]  
 
     game: GameInfo = game_cache.get(game_id)
