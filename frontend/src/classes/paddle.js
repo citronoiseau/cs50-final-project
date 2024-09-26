@@ -22,6 +22,18 @@ export default class Paddle {
     this.checkCollision(canvas);
   }
 
+  moveBotPaddle({ canvas, ball }) {
+    const botCenter = this.y + this.height / 2;
+    const ballCenter = ball.positionY;
+
+    if (botCenter < ballCenter - 10) {
+      this.y += this.speed;
+    } else if (botCenter > ballCenter + 10) {
+      this.y -= this.speed;
+    }
+    this.checkCollision(canvas);
+  }
+
   reset(canvas) {
     if (this.type === "left") {
       this.x = 40;

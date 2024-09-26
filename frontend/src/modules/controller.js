@@ -66,7 +66,7 @@ function gameLoop(board) {
 
   player1.paddle.movePaddle(canvas);
   if (player2.type === "bot") {
-    // todo
+    player2.paddle.moveBotPaddle(board);
   } else {
     player2.paddle.movePaddle(canvas);
   }
