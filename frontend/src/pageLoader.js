@@ -1,9 +1,10 @@
 import controller from "./modules/controller";
+import controllerMultiplayer from "./modules/multiplayer";
 
 export function pageLoader() {
-  controller();
+  controllerMultiplayer();
 }
 
-export function pageLoaderDeepLink() {
-  // #TODO deep link for online game
+export function pageLoaderDeepLink(gameId) {
+  controllerMultiplayer(gameId);
 }

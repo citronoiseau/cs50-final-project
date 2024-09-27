@@ -7,7 +7,6 @@ const getQueryParam = (param) => {
 };
 
 const gameId = getQueryParam("gameId");
-
 if (gameId) {
   // If user joins an already created game
   pageLoaderDeepLink(gameId);
