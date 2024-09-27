@@ -25,11 +25,12 @@ export default class Ball {
   checkPaddleCollision(paddle) {
     // Check for collision between ball and paddle
     if (
-      this.positionX + this.radius >= paddle.x &&
-      this.positionX - this.radius <= paddle.x + paddle.width &&
-      this.positionY + this.radius >= paddle.y &&
-      this.positionY - this.radius <= paddle.y + paddle.height
+      this.positionX + this.radius >= paddle.x - 5 &&
+      this.positionX - this.radius <= paddle.x + paddle.width + 5 &&
+      this.positionY + this.radius >= paddle.y - 15 &&
+      this.positionY - this.radius <= paddle.y + paddle.height + 15
     ) {
+      // Gradually incrementing speed
       if (Math.abs(this.dx) < this.maxSpeed) {
         this.dx += this.dx > 0 ? this.speedIncrement : -this.speedIncrement;
       }

@@ -8,6 +8,9 @@ export default class Player {
 
   updateScore() {
     this.score += 1;
-    console.log(`${this.name}: ${this.score}`);
+  }
+
+  setScore(int) {
+    this.score = int;
   }
 }
