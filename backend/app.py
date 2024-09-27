@@ -1,16 +1,16 @@
-from flask import Flask, render_template
-from flask_socketio import SocketIO, emit
+from flask import Flask, request
+from flask_socketio import SocketIO, emit, disconnect
 from flask_cors import CORS
 from flask_caching import Cache
-from data.game_info import Player, GameInfo
+from data.gameInfo import Player, GameInfo
 from random import randint
 from uuid import uuid4
 
 test_game_id = "aaa-aaa-aaa"
 
 app = Flask(__name__)
-socketio = SocketIO(app)
-CORS(app, resources={r"/socket.io/*": {"origins": "http://localhost:8080"}})
+CORS(app, resources={r"/*": {"origins": "http://localhost:8080"}}) 
+socketio = SocketIO(app, cors_allowed_origins="http://localhost:8080")  
 
 config = {
     "CACHE_TYPE": "FileSystemCache",
@@ -38,16 +38,18 @@ def hello_world():
     return "<p>Hello, World!</p>"
 
 
+@app.route("/new_game")
 def new_game():
     id = test_game_id  # test id
     while id and game_cache.has(id):
         id = f"{rand_xyz()}-{rand_xyz()}-{rand_xyz()}"
     game = GameInfo(id)
     player1_id = test_uuid("a") if game.id == test_game_id else str(uuid4())
-    player1 = Player(player1_id, "Player 1", 0)
+    player1 = Player(player1_id, "host", "Player 1", 0)
     game.players[player1.id] = player1
     game_cache.set(id, game)
     return {"id": id, "player": player1}
+
 
 @app.route("/join_game/<id>")
 def join_game(id: str):
@@ -57,7 +59,7 @@ def join_game(id: str):
     if len(game.players) == game.max_players:
         raise RuntimeError(f"Game {id} is full.")
     player2_id = test_uuid("b") if game.id == test_game_id else str(uuid4())
-    player2 = Player(player2_id, "Player 2")
+    player2 = Player(player2_id, "guest", "Player 2", 0)
     game.players[player2.id] = player2
     game_cache.set(id, game)
     return {"id": id, "player": player2}
@@ -65,14 +67,14 @@ def join_game(id: str):
 
 @socketio.on('connect')
 def handle_connect():
-    game_id = request.args.get('game_id')  # Extract game_id from the query parameters
+    game_id = request.args.get('game_id')  
     if not game_id or not game_cache.has(game_id):
         print(f"Game ID {game_id} is invalid or missing.")
-        disconnect()  # Disconnect the client if game_id is invalid
+        disconnect()  
     else:
         print(f"Player connected to game {game_id}")
 
-# Handle paddle and ball movement
+
 @socketio.on("update_game_state_left")
 def handle_left_player_update(data):
     game_id = request.args.get('game_id')  
@@ -85,14 +87,31 @@ def handle_left_player_update(data):
         game.left_paddle = paddle_data["position"]  
         game.ball.position_x = ball_data["position_x"] 
         game.ball.position_y = ball_data["position_y"]  
-        
+        game.rounds = data["rounds"]
+        scores_data = data["scores"] 
+        winner = data["winner"]
+
+        if len(scores_data) == 2:
+            player_ids = list(game.players.keys()) 
+            if len(player_ids) == 2:
+                game.players[player_ids[0]].score = scores_data[0]  
+                game.players[player_ids[1]].score = scores_data[1]   
+
+        if winner:  
+            game.winner = winner
+
         emit("game_state_updated", {
             "ball": {
                 "position_x": game.ball.position_x,
                 "position_y": game.ball.position_y
             },
-            "left_paddle": game.left_paddle
+            "left_paddle": game.left_paddle,
+            "scores": [game.players[player_ids[0]].score, game.players[player_ids[1]].score]  if len(player_ids) == 2 else [0, 0],
+            "rounds": game.rounds,
+            "winner": game.winner,
         }, broadcast=True)
+
+
 
 @socketio.on("update_game_state_right")
 def handle_right_player_update(data):

@@ -10,6 +10,7 @@ class GameState(Enum):
 @dataclass
 class Player:
     id: str
+    type: str
     name: str
     score: int
 
@@ -17,7 +18,6 @@ class Player:
 class Ball:
     position_x: float
     position_y: float
-    radius: float   
 
 @dataclass
 class Paddle:
@@ -32,12 +32,13 @@ class GameStatus:
 @dataclass
 class GameInfo:
     id: str
-    players: dict[str, Player] = dict
+    players: dict[str, Player] = field(default_factory=dict)
     current_player: int = 0
     winner: str = ""
     max_players: int = 2
     min_players: int = 2
-    ball: Ball = field(default_factory=lambda: Ball(0, 0, 0, 0, 10))  
+    rounds: int = 0
+    ball: Ball = field(default_factory=lambda: Ball(0, 0))  
     left_paddle: Paddle = field(default_factory=lambda: Paddle(0))  
     right_paddle: Paddle = field(default_factory=lambda: Paddle(0))   
 
