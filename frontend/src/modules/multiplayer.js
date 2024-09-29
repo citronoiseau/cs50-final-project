@@ -11,6 +11,7 @@ import displayWinner from "../functions/displayWinner";
 import updateScore from "../functions/updateScore";
 
 const gameServerHost = "127.0.0.1:5000";
+let lastTime;
 
 async function apiCall(url) {
   const response = await fetch(url);
@@ -87,12 +88,15 @@ function sendUpdate(socket, board, ball, player1, player2) {
   }
 }
 
-function gameLoop(board, socket) {
+function gameLoop(board, socket, time) {
   const { ctx } = board;
   const { canvas } = board;
   const player1 = board.players[0];
   const player2 = board.players[1];
   const { ball } = board;
+
+  const delta = (time - lastTime) / 1000;
+  lastTime = time;
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -107,7 +111,7 @@ function gameLoop(board, socket) {
   ball.draw(ctx);
 
   if (player1.type === "host") {
-    const isWin = ball.moveBall(canvas, player1, player2);
+    const isWin = ball.moveBall(canvas, player1, player2, delta);
     if (isWin) {
       board.updateRounds();
       updateScore(board);
@@ -128,13 +132,12 @@ function gameLoop(board, socket) {
       ball.reset(canvas);
       player1.paddle.reset(canvas);
       player2.paddle.reset(canvas);
-      ball.setDirection(Math.random() < 0.5 ? ball.dx : -ball.dx);
     }
   }
   sendUpdate(socket, board, ball, player1, player2);
 
   if (!board.winner) {
-    requestAnimationFrame(() => gameLoop(board, socket));
+    requestAnimationFrame((newTime) => gameLoop(board, socket, newTime));
   }
 }
 
@@ -220,41 +223,55 @@ function initializePlayers(canvas, players, data) {
 }
 
 export default async function controllerMultiplayer(joining = false) {
-  gameUI();
-  const data = await initializeGame(joining);
+  try {
+    const data = await initializeGame(joining);
 
-  if (data) {
-    console.log(data);
-    const socket = io(`http://${gameServerHost}`, {
-      transports: ["websocket", "polling"],
-      query: { game_id: data.id },
-    });
+    if (data) {
+      gameUI();
+      console.log(data);
+      const socket = io(`http://${gameServerHost}`, {
+        transports: ["websocket", "polling"],
+        query: { game_id: data.id },
+      });
 
-    const canvas = document.querySelector(".canvas");
-    const ctx = canvas.getContext("2d"); // Gives me canvas workspace
+      const canvas = document.querySelector(".canvas");
+      const ctx = canvas.getContext("2d"); // Gives me canvas workspace
 
-    const players = [];
-    initializePlayers(canvas, players, data);
+      const players = [];
+      initializePlayers(canvas, players, data);
 
-    players.forEach((player) => {
-      player.paddle.draw(ctx);
-    });
+      players.forEach((player) => {
+        player.paddle.draw(ctx);
+      });
 
-    const ball = new Ball(2, 2, canvas.width / 2, canvas.height / 2, 10);
+      const ball = new Ball(
+        { x: 0.75, y: 0.5 },
+        canvas.width / 2,
+        canvas.height / 2,
+        10,
+      );
 
-    const board = new Board(canvas, ctx, players, 0, ball, false);
+      const board = new Board(canvas, ctx, players, 0, ball, false);
 
-    receiveUpdate(socket, board);
-    updateScore(board);
+      updateScore(board);
 
-    socket.on("connect", () => {
-      console.log("Successfully connected to the server");
-      gameLoop(board, socket);
-    });
+      socket.on("connect", () => {
+        receiveUpdate(socket, board);
+        console.log("Successfully connected to the server");
+        requestAnimationFrame((time) => {
+          lastTime = time;
+          gameLoop(board, socket, time);
+        });
+      });
 
-    socket.on("connect_error", (err) => {
-      console.error("Connection failed:", err);
-    });
+      socket.on("connect_error", (err) => {
+        console.error("Connection failed:", err);
+      });
+      return { ok: true };
+    }
+  } catch (error) {
+    console.error("Error in controllerMultiplayer:", error);
+    return { ok: false };
   }
 }
 
@@ -281,7 +298,11 @@ function startCountdown(board) {
         ctx.fillText(countdown, canvas.width / 2, canvas.height / 2);
       } else {
         clearInterval(countdownInterval);
-        requestAnimationFrame(() => board.updateRounds(), gameLoop(board));
+        requestAnimationFrame((time) => {
+          lastTime = time;
+          board.updateRounds();
+          gameLoop(board, time);
+        });
       }
     }, 1000);
   }, 100);

@@ -1,51 +1,49 @@
 // Class for ball object to have easy control on size, speed and position.
+const INITIAL_VELOCITY = 250;
+const VELOCITY_INCREASE = 15;
+
 export default class Ball {
-  constructor(dx, dy, positionX, positionY, radius) {
-    this.dx = dx; // Speed in x direction
-    this.dy = dy; // Speed in y direction
+  constructor(direction, positionX, positionY, radius) {
+    this.direction = direction;
     this.positionX = positionX;
     this.positionY = positionY;
     this.radius = radius;
-    this.speedIncrement = 0.1;
-    this.maxSpeed = 5;
+    this.velocity = INITIAL_VELOCITY;
   }
 
   reset(canvas) {
     this.positionX = canvas.width / 2;
     this.positionY = canvas.height / 2;
-    this.dx = 2;
-    this.dy = 2;
-  }
-
-  setDirection(direction) {
-    this.dx = direction;
-    this.dy = direction;
+    this.direction = { x: 0 };
+    while (
+      Math.abs(this.direction.x) <= 0.2 ||
+      Math.abs(this.direction.x) >= 0.9
+    ) {
+      const heading = randomNumberBetween(0, 2 * Math.PI);
+      this.direction = { x: Math.cos(heading), y: Math.sin(heading) };
+    }
+    this.velocity = INITIAL_VELOCITY;
   }
 
   checkPaddleCollision(paddle) {
     // Check for collision between ball and paddle
     if (
-      this.positionX + this.radius >= paddle.x - 5 &&
-      this.positionX - this.radius <= paddle.x + paddle.width + 5 &&
-      this.positionY + this.radius >= paddle.y - 15 &&
-      this.positionY - this.radius <= paddle.y + paddle.height + 15
+      this.positionX + this.radius >= paddle.x &&
+      this.positionX - this.radius <= paddle.x + paddle.width &&
+      this.positionY + this.radius >= paddle.y &&
+      this.positionY - this.radius <= paddle.y + paddle.height
     ) {
-      // Gradually incrementing speed
-      if (Math.abs(this.dx) < this.maxSpeed) {
-        this.dx += this.dx > 0 ? this.speedIncrement : -this.speedIncrement;
-      }
-
-      if (Math.abs(this.dy) < this.maxSpeed) {
-        this.dy += this.dy > 0 ? this.speedIncrement : -this.speedIncrement;
-      }
-
-      this.dx = -this.dx;
+      this.direction.x *= -1;
     }
   }
 
-  moveBall(canvas, player1, player2) {
-    // Check for left wall collision (Player 2 scores)
+  moveBall(canvas, player1, player2, delta) {
+    this.positionX += this.direction.x * this.velocity * delta;
+    this.positionY += this.direction.y * this.velocity * delta;
 
+    this.velocity += VELOCITY_INCREASE * delta;
+
+    // Check for left wall collision (Player 2 scores)
     if (this.positionX - this.radius <= 0) {
       player2.updateScore();
       return true;
@@ -61,15 +59,12 @@ export default class Ball {
       this.positionY - this.radius <= 0 ||
       this.positionY + this.radius >= canvas.height
     ) {
-      this.dy = -this.dy;
+      this.direction.y *= -1;
     }
 
     // Check if ball collides with paddle
     this.checkPaddleCollision(player1.paddle);
     this.checkPaddleCollision(player2.paddle);
-
-    this.positionX += this.dx;
-    this.positionY += this.dy;
 
     return false;
   }
@@ -81,4 +76,8 @@ export default class Ball {
     ctx.fill();
     ctx.closePath();
   }
+}
+
+function randomNumberBetween(min, max) {
+  return Math.random() * (max - min) + min;
 }

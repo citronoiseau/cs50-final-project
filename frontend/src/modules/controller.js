@@ -9,8 +9,9 @@ import displayWinner from "../functions/displayWinner";
 import updateScore from "../functions/updateScore";
 
 let isPaused = true;
+let lastTime;
 
-function gameLoop(board) {
+function gameLoop(board, time) {
   const { ctx } = board;
   const { canvas } = board;
   const player1 = board.players[0];
@@ -18,6 +19,9 @@ function gameLoop(board) {
   const { ball } = board;
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  const delta = (time - lastTime) / 1000;
+  lastTime = time;
 
   player1.paddle.movePaddle(canvas);
   if (player2.type === "bot") {
@@ -31,10 +35,11 @@ function gameLoop(board) {
 
   if (!isPaused) {
     ball.draw(ctx);
-    const isWin = ball.moveBall(canvas, player1, player2);
+    const isWin = ball.moveBall(canvas, player1, player2, delta);
     if (isWin) {
       isPaused = true;
       board.updateRounds();
+      updateScore(board);
       if (board.rounds === 5) {
         let winner;
         if (player1.score > player2.score) {
@@ -53,9 +58,8 @@ function gameLoop(board) {
       ball.reset(canvas);
       player1.paddle.reset(canvas);
       player2.paddle.reset(canvas);
-      ball.setDirection(Math.random() < 0.5 ? ball.dx : -ball.dx);
     }
-    requestAnimationFrame(() => gameLoop(board));
+    requestAnimationFrame((newTime) => gameLoop(board, newTime));
   }
 }
 
@@ -83,7 +87,10 @@ function startCountdown(board) {
       } else {
         clearInterval(countdownInterval);
         isPaused = false;
-        requestAnimationFrame(() => gameLoop(board));
+        requestAnimationFrame((time) => {
+          lastTime = time;
+          gameLoop(board, time);
+        });
       }
     }, 1000);
   }, 100);
@@ -112,7 +119,12 @@ export default function controller(bot = false) {
 
   const players = [player1, player2];
 
-  const ball = new Ball(2, 2, canvas.width / 2, canvas.height / 2, 10);
+  const ball = new Ball(
+    { x: 0.75, y: 0.5 },
+    canvas.width / 2,
+    canvas.height / 2,
+    10,
+  );
 
   const board = new Board(canvas, ctx, players, 0, ball, false);
 
