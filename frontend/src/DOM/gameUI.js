@@ -1,6 +1,9 @@
+import removeChildren from "./helpers/removeChildren";
+
 const content = document.querySelector("#content");
 
 export default function gameUI() {
+  removeChildren(content);
   const gameContainer = document.createElement("div");
   gameContainer.classList.add("gameContainer");
   content.appendChild(gameContainer);

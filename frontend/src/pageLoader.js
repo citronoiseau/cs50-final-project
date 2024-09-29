@@ -1,8 +1,8 @@
-import controller from "./modules/controller";
+import startMenu from "./DOM/startMenu";
 import controllerMultiplayer from "./modules/multiplayer";
 
 export function pageLoader() {
-  controllerMultiplayer();
+  startMenu();
 }
 
 export function pageLoaderDeepLink(gameId) {
