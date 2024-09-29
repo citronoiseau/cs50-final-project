@@ -26,14 +26,21 @@ export default class Ball {
   }
 
   checkPaddleCollision(paddle) {
-    // Check for collision between ball and paddle
     if (
       this.positionX + this.radius >= paddle.x &&
       this.positionX - this.radius <= paddle.x + paddle.width &&
       this.positionY + this.radius >= paddle.y &&
       this.positionY - this.radius <= paddle.y + paddle.height
     ) {
-      this.direction.x *= -1;
+      const relativeIntersectionY =
+        paddle.y + paddle.height / 2 - this.positionY;
+
+      const normalizedRelativeY = relativeIntersectionY / (paddle.height / 2);
+      const bounceAngle = (normalizedRelativeY * Math.PI) / 4;
+      this.direction = { x: Math.cos(bounceAngle), y: Math.sin(bounceAngle) };
+      if (paddle.type === "right") {
+        this.direction.x *= -1;
+      }
     }
   }
 
