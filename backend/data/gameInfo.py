@@ -5,7 +5,6 @@ from enum import Enum
 class GameState(Enum):
     SETUP = "SETUP"
     ACTIVE = "ACTIVE"
-    FINISHED = "FINISHED"
 
 @dataclass
 class Player:
@@ -42,13 +41,11 @@ class GameInfo:
     left_paddle: Paddle = field(default_factory=lambda: Paddle(0))  
     right_paddle: Paddle = field(default_factory=lambda: Paddle(0))   
 
-    def get_game_state(self) -> GameState:
+    def get_game_state(self) -> str: 
         if len(self.players) < self.min_players:
-            return GameState.SETUP
-        elif self.winner:
-            return GameState.FINISHED
+            return GameState.SETUP.value  
         else:
-            return GameState.ACTIVE
+            return GameState.ACTIVE.value
 
     def get_status(self) -> GameStatus:
         joined_players = [

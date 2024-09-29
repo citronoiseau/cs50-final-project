@@ -5,6 +5,7 @@ from flask_caching import Cache
 from data.gameInfo import Player, GameInfo
 from random import randint
 from uuid import uuid4
+from dataclasses import asdict
 
 test_game_id = "aaa-aaa-aaa"
 
@@ -65,24 +66,31 @@ def join_game(id: str):
     return {"id": id, "player": player2}
 
 
+@app.route("/status/<id>")
+def status(id: str):
+    if not game_cache.has(id):
+        raise RuntimeError(f"Game {id} does not exists.")
+    return asdict(game_cache.get(id).get_status())
+
+
 @socketio.on('connect')
 def handle_connect():
-    game_id = request.args.get('game_id')  
-    if not game_id or not game_cache.has(game_id):
-        print(f"Game ID {game_id} is invalid or missing.")
+    id = request.args.get('id')  
+    if not id or not game_cache.has(id):
+        print(f"Game ID {id} is invalid or missing.")
         disconnect()  
     else:
-        print(f"Player connected to game {game_id}")
+        print(f"Player connected to game {id}")
 
 
 @socketio.on("update_game_state_left")
 def handle_left_player_update(data):
-    game_id = request.args.get('game_id')  
+    id = request.args.get('id')  
     paddle_data = data["paddle"] 
     ball_data = data["ball"] 
     
 
-    game: GameInfo = game_cache.get(game_id)
+    game: GameInfo = game_cache.get(id)
     if game:
         game.left_paddle = paddle_data["position"]  
         game.ball.position_x = ball_data["position_x"] 
@@ -99,6 +107,7 @@ def handle_left_player_update(data):
 
         if winner:  
             game.winner = winner
+        
 
         emit("game_state_updated", {
             "ball": {
@@ -115,10 +124,10 @@ def handle_left_player_update(data):
 
 @socketio.on("update_game_state_right")
 def handle_right_player_update(data):
-    game_id = request.args.get('game_id')  
+    id = request.args.get('id')  
     paddle_data = data["paddle"]  
 
-    game: GameInfo = game_cache.get(game_id)
+    game: GameInfo = game_cache.get(id)
     if game:
         game.right_paddle = paddle_data["position"]  
         
