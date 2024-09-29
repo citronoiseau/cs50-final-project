@@ -28,6 +28,22 @@ async function joinGame(gameId) {
   return apiCall(`http://${gameServerHost}/join_game/${gameId}`);
 }
 
+async function getGameStatus(gameId) {
+  const response = await apiCall(`http://${gameServerHost}/status/${gameId}`);
+  return response.state;
+}
+
+async function waitForActiveStatus(gameId) {
+  const status = await getGameStatus(gameId);
+  console.log(status);
+  if (status !== "ACTIVE") {
+    await new Promise((resolve) => {
+      setTimeout(resolve, 1000);
+    });
+    return waitForActiveStatus(gameId);
+  }
+}
+
 function receiveUpdate(socket, board) {
   const player1 = board.players[0];
   const player2 = board.players[1];
@@ -55,7 +71,6 @@ function receiveUpdate(socket, board) {
         updateScore(board);
       }
       if (data.winner) {
-        console.log(data.winner);
         board.setWinner(data.winner);
         displayWinner(board.winner, board.players);
       }
@@ -227,11 +242,11 @@ export default async function controllerMultiplayer(joining = false) {
     const data = await initializeGame(joining);
 
     if (data) {
+      console.log(data.id);
       gameUI();
-      console.log(data);
       const socket = io(`http://${gameServerHost}`, {
         transports: ["websocket", "polling"],
-        query: { game_id: data.id },
+        query: { id: data.id },
       });
 
       const canvas = document.querySelector(".canvas");
@@ -254,14 +269,16 @@ export default async function controllerMultiplayer(joining = false) {
       const board = new Board(canvas, ctx, players, 0, ball, false);
 
       updateScore(board);
+      ctx.font = "48px serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
 
-      socket.on("connect", () => {
+      socket.on("connect", async () => {
         receiveUpdate(socket, board);
         console.log("Successfully connected to the server");
-        requestAnimationFrame((time) => {
-          lastTime = time;
-          gameLoop(board, socket, time);
-        });
+
+        await waitForActiveStatus(data.id);
+        startCountdown(board, socket);
       });
 
       socket.on("connect_error", (err) => {
@@ -275,7 +292,7 @@ export default async function controllerMultiplayer(joining = false) {
   }
 }
 
-function startCountdown(board) {
+function startCountdown(board, socket) {
   let countdown = 3;
   const { ctx } = board;
   const { canvas } = board;
@@ -301,7 +318,7 @@ function startCountdown(board) {
         requestAnimationFrame((time) => {
           lastTime = time;
           board.updateRounds();
-          gameLoop(board, time);
+          gameLoop(board, socket, time);
         });
       }
     }, 1000);
