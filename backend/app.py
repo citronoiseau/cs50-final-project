@@ -137,3 +137,19 @@ def handle_right_player_update(data):
 
 if __name__ == "__main__":
     socketio.run(app, debug=True)
+
+
+@socketio.on("game_pause_updated")
+def handle_board_pause(data):
+    id = request.args.get('id') 
+    isPaused = data["isPaused"]
+
+    game: GameInfo = game_cache.get(id)
+    if game:
+        game.isPaused = isPaused
+        
+        emit("game_pause_updated", {
+            "isPaused": game.isPaused
+        }, broadcast=True)
+
+

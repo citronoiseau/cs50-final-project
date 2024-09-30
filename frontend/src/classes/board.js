@@ -6,6 +6,7 @@ export default class Board {
     this.rounds = rounds;
     this.ball = ball;
     this.winner = winner;
+    this.isPaused = false;
   }
 
   updateRounds() {

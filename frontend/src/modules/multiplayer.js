@@ -76,6 +76,14 @@ function receiveUpdate(socket, board) {
       }
     }
   });
+
+  socket.on("game_pause_updated", (data) => {
+    board.isPaused = data.isPaused;
+    if (board.isPaused) {
+      console.log("checking board");
+      startCountdown(board, socket);
+    }
+  });
 }
 
 function sendUpdate(socket, board, ball, player1, player2) {
@@ -103,7 +111,18 @@ function sendUpdate(socket, board, ball, player1, player2) {
   }
 }
 
+function sendPauseUpdate(board, socket) {
+  console.log("sending");
+  const gameState = {
+    isPaused: board.isPaused,
+  };
+  socket.emit("game_pause_updated", gameState);
+}
+
 function gameLoop(board, socket, time) {
+  if (board.isPaused) {
+    return;
+  }
   const { ctx } = board;
   const { canvas } = board;
   const player1 = board.players[0];
@@ -142,6 +161,11 @@ function gameLoop(board, socket, time) {
         }
         board.setWinner(winner);
         displayWinner(winner, board.players);
+      }
+
+      if (!board.winner) {
+        board.isPaused = true;
+        sendPauseUpdate(board, socket);
       }
 
       ball.reset(canvas);
@@ -293,6 +317,7 @@ export default async function controllerMultiplayer(joining = false) {
 }
 
 function startCountdown(board, socket) {
+  console.log("in countdown");
   let countdown = 3;
   const { ctx } = board;
   const { canvas } = board;
@@ -314,10 +339,12 @@ function startCountdown(board, socket) {
       if (countdown > 0) {
         ctx.fillText(countdown, canvas.width / 2, canvas.height / 2);
       } else {
+        board.isPaused = false;
+        sendPauseUpdate(board, socket);
         clearInterval(countdownInterval);
         requestAnimationFrame((time) => {
+          console.log("in animation");
           lastTime = time;
-          board.updateRounds();
           gameLoop(board, socket, time);
         });
       }

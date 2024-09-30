@@ -39,7 +39,8 @@ class GameInfo:
     rounds: int = 0
     ball: Ball = field(default_factory=lambda: Ball(0, 0))  
     left_paddle: Paddle = field(default_factory=lambda: Paddle(0))  
-    right_paddle: Paddle = field(default_factory=lambda: Paddle(0))   
+    right_paddle: Paddle = field(default_factory=lambda: Paddle(0)) 
+    isPaused: bool = False
 
     def get_game_state(self) -> str: 
         if len(self.players) < self.min_players:
