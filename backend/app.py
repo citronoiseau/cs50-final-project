@@ -83,6 +83,12 @@ def handle_connect():
         print(f"Player connected to game {id}")
 
 
+
+@socketio.on('leaveGame')
+def handle_disconnect():
+        emit("game_result", broadcast=True)
+
+
 @socketio.on("update_game_state_left")
 def handle_left_player_update(data):
     id = request.args.get('id')  
@@ -96,14 +102,17 @@ def handle_left_player_update(data):
         game.ball.position_x = ball_data["position_x"] 
         game.ball.position_y = ball_data["position_y"]  
         game.rounds = data["rounds"]
+        max_rounds = data["max_rounds"]
         scores_data = data["scores"] 
         winner = data["winner"]
 
-        if len(scores_data) == 2:
-            player_ids = list(game.players.keys()) 
-            if len(player_ids) == 2:
-                game.players[player_ids[0]].score = scores_data[0]  
-                game.players[player_ids[1]].score = scores_data[1]   
+        player_ids = list(game.players.keys()) 
+
+        game.players[player_ids[0]].score = scores_data[0]  
+        game.players[player_ids[1]].score = scores_data[1]
+
+        if max_rounds:
+            game.max_rounds = max_rounds
 
         if winner:  
             game.winner = winner
@@ -115,9 +124,10 @@ def handle_left_player_update(data):
                 "position_y": game.ball.position_y
             },
             "left_paddle": game.left_paddle,
-            "scores": [game.players[player_ids[0]].score, game.players[player_ids[1]].score]  if len(player_ids) == 2 else [0, 0],
+            "scores": [game.players[player_ids[0]].score, game.players[player_ids[1]].score],
             "rounds": game.rounds,
             "winner": game.winner,
+            "max_rounds": game.max_rounds,
         }, broadcast=True)
 
 

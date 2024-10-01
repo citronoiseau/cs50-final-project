@@ -9,6 +9,7 @@ import gameUI from "../DOM/gameUI";
 import paddleController from "../functions/paddleController";
 import displayWinner from "../functions/displayWinner";
 import updateScore from "../functions/updateScore";
+import showToast from "../DOM/helpers/showToast";
 
 const gameServerHost = "127.0.0.1:5000";
 let lastTime;
@@ -81,10 +82,20 @@ function receiveUpdate(socket, board) {
     }
   });
 
-  socket.on("game_result", (data) => {
+  socket.on("game_result", () => {
     board.isPaused = true;
-    board.winner = data.winner;
-    displayWinner(`${data.winner}`, board.players);
+    let winner;
+    if (player1.score > player2.score) {
+      winner = player1.name;
+    } else if (player1.score < player2.score) {
+      winner = player2.name;
+    } else {
+      winner = "It's a tie!";
+    }
+    showToast("Other player disconnected :(");
+    board.setWinner(winner);
+    displayWinner(winner, board.players);
+
     socket.disconnect();
   });
 
@@ -111,6 +122,7 @@ function sendUpdate(socket, board, ball, player1, player2) {
       scores: [player1.score, player2.score],
       winner: board.winner.name || board.winner,
     };
+    console.log(`Sending Update - Scores: ${gameState.scores}`);
     socket.emit("update_game_state_left", gameState);
   } else if (player1.type === "server") {
     const gameState = {

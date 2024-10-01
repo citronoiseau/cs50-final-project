@@ -32,11 +32,11 @@ class GameStatus:
 class GameInfo:
     id: str
     players: dict[str, Player] = field(default_factory=dict)
-    current_player: int = 0
     winner: str = ""
     max_players: int = 2
     min_players: int = 2
     rounds: int = 0
+    max_rounds: int = 5
     ball: Ball = field(default_factory=lambda: Ball(0, 0))  
     left_paddle: Paddle = field(default_factory=lambda: Paddle(0))  
     right_paddle: Paddle = field(default_factory=lambda: Paddle(0)) 
