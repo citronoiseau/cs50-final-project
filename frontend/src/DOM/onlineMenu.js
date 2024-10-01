@@ -2,20 +2,26 @@ import createElement from "./helpers/create";
 import removeChildren from "./helpers/removeChildren";
 import controllerMultiplayer from "../modules/multiplayer";
 import joinGameDialog from "./helpers/dialog";
-import gameUI from "./gameUI";
 import showToast from "./helpers/showToast";
+import createReturnButton from "./helpers/returnButton";
+import { maxRoundsDialog, getMaxRounds } from "./helpers/maxRoundsDialog";
 
 const content = document.querySelector("#content");
 
-export default function localMenu() {
+export default function onlineMenu() {
   removeChildren(content);
   const onlineMenuContainer = createElement(content, "div", "onlineMenu");
 
   const dialog = joinGameDialog();
+  const dialogRounds = maxRoundsDialog(onlineMenuContainer);
 
-  const name = createElement(onlineMenuContainer, "h1", "localHeader");
-  name.textContent = "Local Game";
-
+  // eslint-disable-next-line no-unused-vars
+  const name = createElement(
+    onlineMenuContainer,
+    "h1",
+    "onlineHeader",
+    "Online game",
+  );
   const buttonContainer = createElement(
     onlineMenuContainer,
     "div",
@@ -28,15 +34,22 @@ export default function localMenu() {
     "createGameButton",
     "Create Game",
   );
+  createGameButton.addEventListener("click", () => {
+    dialogRounds.showModal();
+  });
 
-  createGameButton.addEventListener("click", async () => {
-    try {
-      const response = await controllerMultiplayer();
-      if (!response.ok) {
-        showToast("Try again", true);
+  dialogRounds.addEventListener("close", async () => {
+    const rounds = getMaxRounds();
+
+    if (dialogRounds.returnValue === "default") {
+      try {
+        const response = await controllerMultiplayer(false, rounds);
+        if (!response.ok) {
+          showToast("Please try again", true);
+        }
+      } catch (error) {
+        showToast("An error occurred", true);
       }
-    } catch (error) {
-      showToast("An error occurred", true);
     }
   });
 
@@ -50,4 +63,6 @@ export default function localMenu() {
   joinGame.addEventListener("click", () => {
     dialog.showModal();
   });
+
+  const returnButton = createReturnButton(buttonContainer);
 }

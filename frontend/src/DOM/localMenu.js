@@ -1,15 +1,21 @@
 import createElement from "./helpers/create";
 import removeChildren from "./helpers/removeChildren";
 import controller from "../modules/controller";
+import createReturnButton from "./helpers/returnButton";
+import { maxRoundsDialog, getMaxRounds } from "./helpers/maxRoundsDialog";
 
 const content = document.querySelector("#content");
 
 export default function localMenu() {
   removeChildren(content);
+  let gameMode = null;
+
   const localMenuContainer = createElement(content, "div", "startMenu");
 
   const name = createElement(localMenuContainer, "h1", "localHeader");
   name.textContent = "Local Game";
+
+  const dialogRounds = maxRoundsDialog(localMenuContainer);
 
   const buttonContainer = createElement(
     localMenuContainer,
@@ -24,7 +30,8 @@ export default function localMenu() {
     "Player vs Player",
   );
   twoPlayers.addEventListener("click", () => {
-    controller(false);
+    gameMode = false;
+    dialogRounds.showModal();
   });
 
   const againstBot = createElement(
@@ -35,6 +42,23 @@ export default function localMenu() {
   );
 
   againstBot.addEventListener("click", () => {
-    controller(true);
+    gameMode = true;
+    dialogRounds.showModal();
   });
+
+  dialogRounds.addEventListener("close", () => {
+    const rounds = getMaxRounds();
+
+    if (dialogRounds.returnValue === "default") {
+      if (gameMode === false) {
+        controller(false, rounds);
+      } else if (gameMode === true) {
+        controller(true, rounds);
+      }
+    }
+
+    gameMode = null;
+  });
+
+  const returnButton = createReturnButton(buttonContainer);
 }

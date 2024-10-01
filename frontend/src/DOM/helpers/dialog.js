@@ -1,5 +1,4 @@
 import controllerMultiplayer from "../../modules/multiplayer";
-import gameUI from "../gameUI";
 import createElement from "./create";
 import showToast from "./showToast";
 
@@ -15,6 +14,7 @@ export default function joinGameDialog() {
     dialog.close();
   });
 
+  // eslint-disable-next-line no-unused-vars
   const dialogTitle = createElement(
     dialog,
     "div",
