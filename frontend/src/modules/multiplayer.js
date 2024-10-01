@@ -35,7 +35,6 @@ async function getGameStatus(gameId) {
 
 async function waitForActiveStatus(gameId) {
   const status = await getGameStatus(gameId);
-  console.log(status);
   if (status !== "ACTIVE") {
     await new Promise((resolve) => {
       setTimeout(resolve, 1000);
@@ -52,7 +51,9 @@ function receiveUpdate(socket, board) {
   socket.on("game_state_updated", (data) => {
     if (player2.type === "server") {
       if (data.right_paddle !== undefined) {
-        player2.paddle.y = data.right_paddle;
+        if (!board.isPaused) {
+          player2.paddle.y = data.right_paddle;
+        }
       }
     } else if (player1.type === "server") {
       if (data.ball) {
@@ -64,6 +65,9 @@ function receiveUpdate(socket, board) {
       }
       if (data.rounds) {
         board.setRounds(parseFloat(data.rounds));
+      }
+      if (data.max_rounds) {
+        board.changeMaxRounds(data.max_rounds);
       }
       if (data.scores) {
         player1.setScore(data.scores[0]);
@@ -77,10 +81,16 @@ function receiveUpdate(socket, board) {
     }
   });
 
+  socket.on("game_result", (data) => {
+    board.isPaused = true;
+    board.winner = data.winner;
+    displayWinner(`${data.winner}`, board.players);
+    socket.disconnect();
+  });
+
   socket.on("game_pause_updated", (data) => {
     board.isPaused = data.isPaused;
     if (board.isPaused) {
-      console.log("checking board");
       startCountdown(board, socket);
     }
   });
@@ -97,6 +107,7 @@ function sendUpdate(socket, board, ball, player1, player2) {
         position: player1.paddle.y,
       },
       rounds: board.rounds,
+      max_rounds: board.maxRounds,
       scores: [player1.score, player2.score],
       winner: board.winner.name || board.winner,
     };
@@ -112,7 +123,6 @@ function sendUpdate(socket, board, ball, player1, player2) {
 }
 
 function sendPauseUpdate(board, socket) {
-  console.log("sending");
   const gameState = {
     isPaused: board.isPaused,
   };
@@ -150,7 +160,7 @@ function gameLoop(board, socket, time) {
       board.updateRounds();
       updateScore(board);
 
-      if (board.rounds === 10) {
+      if (board.rounds === board.maxRounds) {
         let winner;
         if (player1.score > player2.score) {
           winner = player1.name;
@@ -261,17 +271,20 @@ function initializePlayers(canvas, players, data) {
   }
 }
 
-export default async function controllerMultiplayer(joining = false) {
+export default async function controllerMultiplayer(
+  joining = false,
+  maxRounds,
+) {
   try {
     const data = await initializeGame(joining);
 
     if (data) {
-      console.log(data.id);
-      gameUI();
       const socket = io(`http://${gameServerHost}`, {
         transports: ["websocket", "polling"],
         query: { id: data.id },
       });
+      gameUI(data.id, socket);
+      const dialog = document.querySelector(".dialog");
 
       const canvas = document.querySelector(".canvas");
       const ctx = canvas.getContext("2d"); // Gives me canvas workspace
@@ -290,7 +303,7 @@ export default async function controllerMultiplayer(joining = false) {
         10,
       );
 
-      const board = new Board(canvas, ctx, players, 0, ball, false);
+      const board = new Board(canvas, ctx, players, 0, ball, false, maxRounds);
 
       updateScore(board);
       ctx.font = "48px serif";
@@ -299,25 +312,19 @@ export default async function controllerMultiplayer(joining = false) {
 
       socket.on("connect", async () => {
         receiveUpdate(socket, board);
-        console.log("Successfully connected to the server");
-
+        dialog.showModal();
         await waitForActiveStatus(data.id);
+        dialog.close();
         startCountdown(board, socket);
-      });
-
-      socket.on("connect_error", (err) => {
-        console.error("Connection failed:", err);
       });
       return { ok: true };
     }
   } catch (error) {
-    console.error("Error in controllerMultiplayer:", error);
     return { ok: false };
   }
 }
 
 function startCountdown(board, socket) {
-  console.log("in countdown");
   let countdown = 3;
   const { ctx } = board;
   const { canvas } = board;
@@ -325,6 +332,8 @@ function startCountdown(board, socket) {
   const player2 = board.players[1];
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
+  player1.paddle.reset(canvas);
+  player2.paddle.reset(canvas);
   player1.paddle.draw(ctx);
   player2.paddle.draw(ctx);
 
@@ -343,7 +352,6 @@ function startCountdown(board, socket) {
         sendPauseUpdate(board, socket);
         clearInterval(countdownInterval);
         requestAnimationFrame((time) => {
-          console.log("in animation");
           lastTime = time;
           gameLoop(board, socket, time);
         });

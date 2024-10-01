@@ -40,7 +40,7 @@ function gameLoop(board, time) {
       isPaused = true;
       board.updateRounds();
       updateScore(board);
-      if (board.rounds === 5) {
+      if (board.rounds === board.maxRounds) {
         let winner;
         if (player1.score > player2.score) {
           winner = player1.name;
@@ -96,7 +96,7 @@ function startCountdown(board) {
   }, 100);
 }
 
-export default function controller(bot = false) {
+export default function controller(bot = false, rounds) {
   let gameStarted = false;
   gameUI();
   const canvas = document.querySelector(".canvas");
@@ -126,8 +126,8 @@ export default function controller(bot = false) {
     10,
   );
 
-  const board = new Board(canvas, ctx, players, 0, ball, false);
-
+  const board = new Board(canvas, ctx, players, 0, ball, false, rounds);
+  console.log(board);
   player1.paddle.draw(ctx);
   player2.paddle.draw(ctx);
   updateScore(board);

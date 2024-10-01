@@ -1,5 +1,5 @@
 export default class Board {
-  constructor(canvas, context, players, rounds, ball, winner) {
+  constructor(canvas, context, players, rounds, ball, winner, maxRounds = 5) {
     this.canvas = canvas;
     this.ctx = context;
     this.players = players;
@@ -7,6 +7,7 @@ export default class Board {
     this.ball = ball;
     this.winner = winner;
     this.isPaused = false;
+    this.maxRounds = maxRounds;
   }
 
   updateRounds() {
@@ -19,5 +20,9 @@ export default class Board {
 
   setWinner(name) {
     this.winner = name;
+  }
+
+  changeMaxRounds(int) {
+    this.maxRounds = int;
   }
 }
