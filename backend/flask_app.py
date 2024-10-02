@@ -10,8 +10,8 @@ from dataclasses import asdict
 test_game_id = "aaa-aaa-aaa"
 
 app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": "http://localhost:8080"}}) 
-socketio = SocketIO(app, cors_allowed_origins="http://localhost:8080")  
+CORS(app, resources={r"/*": {"origins": ["http://localhost:8080", "http://192.168.31.32:8080", "https://lemonbirdy.pythonanywhere.com"]}})
+socketio = SocketIO(app, cors_allowed_origins="*", transports=["websocket", "polling"])
 
 config = {
     "CACHE_TYPE": "FileSystemCache",
