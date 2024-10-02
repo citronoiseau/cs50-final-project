@@ -6,12 +6,17 @@ from data.gameInfo import Player, GameInfo
 from random import randint
 from uuid import uuid4
 from dataclasses import asdict
+import eventlet
+eventlet.monkey_patch()
+
+
+async_mode = 'eventlet'
 
 test_game_id = "aaa-aaa-aaa"
-
 app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": ["http://localhost:8080", "http://192.168.31.32:8080", "https://lemonbirdy.pythonanywhere.com"]}})
-socketio = SocketIO(app, cors_allowed_origins="*", transports=["websocket", "polling"])
+CORS(app, resources={r"/*": {"origins": "*"}})
+socketio = SocketIO(app, async_mode=async_mode, cors_allowed_origins="*")
+
 
 config = {
     "CACHE_TYPE": "FileSystemCache",
@@ -145,9 +150,6 @@ def handle_right_player_update(data):
             "right_paddle": game.right_paddle
         }, broadcast=True)
 
-if __name__ == "__main__":
-    socketio.run(app, debug=True)
-
 
 @socketio.on("game_pause_updated")
 def handle_board_pause(data):
@@ -163,3 +165,5 @@ def handle_board_pause(data):
         }, broadcast=True)
 
 
+if __name__ == "__main__":
+        socketio.run(app, debug=False)
