@@ -15,8 +15,8 @@ socketio = SocketIO(app, cors_allowed_origins="http://localhost:8080")
 
 config = {
     "CACHE_TYPE": "FileSystemCache",
-    "CACHE_DEFAULT_TIMEOUT": 86400,  # in seconds, keep a game around for 24 hours max.
-    "CACHE_THRESHOLD": 10000,  # increasing the default (500) to support more active games.
+    "CACHE_DEFAULT_TIMEOUT": 3600,  # in seconds, keep a game around for 24 hours max.
+    "CACHE_THRESHOLD": 500,  # increasing the default (500) to support more active games.
     "CACHE_DIR": "/tmp",
 }
 
