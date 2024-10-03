@@ -3,7 +3,7 @@ export default class Paddle {
     this.x = x;
     this.y = y;
     this.type = type;
-    this.speed = 5;
+    this.speed = 15;
     this.direction = 0;
     this.width = width;
     this.height = height;

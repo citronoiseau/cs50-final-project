@@ -13,6 +13,8 @@ import showToast from "../DOM/helpers/showToast";
 
 const gameServerHost = "pingpong-backend-hs1u.onrender.com";
 let lastTime;
+const targetFPS = 40;
+const frameDuration = 1000 / targetFPS; // 16.67 ms per frame
 
 async function apiCall(url) {
   const response = await fetch(url);
@@ -92,7 +94,7 @@ function receiveUpdate(socket, board) {
     } else {
       winner = "It's a tie!";
     }
-    showToast("Other player disconnected :(");
+    showToast("Player disconnected");
     board.setWinner(winner);
     displayWinner(winner, board.players);
 
@@ -145,57 +147,60 @@ function gameLoop(board, socket, time) {
   if (board.isPaused) {
     return;
   }
-  const { ctx } = board;
-  const { canvas } = board;
-  const player1 = board.players[0];
-  const player2 = board.players[1];
-  const { ball } = board;
 
-  const delta = (time - lastTime) / 1000;
-  lastTime = time;
+  const delta = time - lastTime;
 
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  // Only update and render if enough time has passed to maintain 60 FPS
+  if (delta >= frameDuration) {
+    lastTime = time;
 
-  player1.paddle.movePaddle(canvas);
+    const { ctx } = board;
+    const { canvas } = board;
+    const player1 = board.players[0];
+    const player2 = board.players[1];
+    const { ball } = board;
 
-  player2.paddle.movePaddle(canvas);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  player1.paddle.draw(ctx);
+    player1.paddle.movePaddle(canvas);
+    player2.paddle.movePaddle(canvas);
 
-  player2.paddle.draw(ctx);
+    player1.paddle.draw(ctx);
+    player2.paddle.draw(ctx);
+    ball.draw(ctx);
 
-  ball.draw(ctx);
+    if (player1.type === "host") {
+      const isWin = ball.moveBall(canvas, player1, player2, delta / 1000);
+      if (isWin) {
+        board.updateRounds();
+        updateScore(board);
 
-  if (player1.type === "host") {
-    const isWin = ball.moveBall(canvas, player1, player2, delta);
-    if (isWin) {
-      board.updateRounds();
-      updateScore(board);
-
-      if (board.rounds === board.maxRounds) {
-        let winner;
-        if (player1.score > player2.score) {
-          winner = player1.name;
-        } else if (player1.score < player2.score) {
-          winner = player2.name;
-        } else {
-          winner = "It's a tie!";
+        if (board.rounds === board.maxRounds) {
+          let winner;
+          if (player1.score > player2.score) {
+            winner = player1.name;
+          } else if (player1.score < player2.score) {
+            winner = player2.name;
+          } else {
+            winner = "It's a tie!";
+          }
+          board.setWinner(winner);
+          displayWinner(winner, board.players);
         }
-        board.setWinner(winner);
-        displayWinner(winner, board.players);
-      }
 
-      if (!board.winner) {
-        board.isPaused = true;
-        sendPauseUpdate(board, socket);
-      }
+        if (!board.winner) {
+          board.isPaused = true;
+          sendPauseUpdate(board, socket);
+        }
 
-      ball.reset(canvas);
-      player1.paddle.reset(canvas);
-      player2.paddle.reset(canvas);
+        ball.reset(canvas);
+        player1.paddle.reset(canvas);
+        player2.paddle.reset(canvas);
+      }
     }
+
+    sendUpdate(socket, board, ball, player1, player2);
   }
-  sendUpdate(socket, board, ball, player1, player2);
 
   if (!board.winner) {
     requestAnimationFrame((newTime) => gameLoop(board, socket, newTime));

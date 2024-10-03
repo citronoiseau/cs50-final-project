@@ -2,7 +2,6 @@ import removeChildren from "./helpers/removeChildren";
 import createWaitDialog from "./helpers/waitingDialog";
 import createReturnButton from "./helpers/returnButton";
 import createElement from "./helpers/create";
-import showToast from "./helpers/showToast";
 
 const content = document.querySelector("#content");
 
@@ -36,16 +35,21 @@ export default function gameUI(gameId, socket) {
 
   returnButton.addEventListener("click", () => {
     if (socket) {
-      showToast(`Disconnecting from game with ID: ${gameId}`);
-      socket.emit("leaveGame");
-      socket.disconnect();
+      socket.emit("leaveGame", () => {
+        socket.disconnect();
+      });
+
+      setTimeout(() => socket.disconnect(), 100);
     }
   });
 
   window.addEventListener("beforeunload", () => {
     if (socket) {
-      socket.emit("leaveGame");
-      socket.disconnect();
+      socket.emit("leaveGame", () => {
+        socket.disconnect();
+      });
+
+      setTimeout(() => socket.disconnect(), 100);
     }
   });
 }
