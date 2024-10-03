@@ -10,7 +10,7 @@ export default function localMenu() {
   removeChildren(content);
   let gameMode = null;
 
-  const localMenuContainer = createElement(content, "div", "startMenu");
+  const localMenuContainer = createElement(content, "div", "localMenu");
 
   const name = createElement(localMenuContainer, "h1", "localHeader");
   name.textContent = "Local Game";

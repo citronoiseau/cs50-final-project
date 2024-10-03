@@ -1,6 +1,12 @@
+import asteroidImage from "../images/asteroid.png";
+
 // Class for ball object to have easy control on size, speed and position.
 const INITIAL_VELOCITY = 250;
 const VELOCITY_INCREASE = 15;
+
+function randomNumberBetween(min, max) {
+  return Math.random() * (max - min) + min;
+}
 
 export default class Ball {
   constructor(direction, positionX, positionY, radius) {
@@ -9,6 +15,8 @@ export default class Ball {
     this.positionY = positionY;
     this.radius = radius;
     this.velocity = INITIAL_VELOCITY;
+    this.image = new Image();
+    this.image.src = asteroidImage;
   }
 
   reset(canvas) {
@@ -78,13 +86,12 @@ export default class Ball {
 
   // Using canvas API to create smooth game flow. Drawing a ball here.
   draw(ctx) {
-    ctx.beginPath();
-    ctx.arc(this.positionX, this.positionY, this.radius, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.closePath();
+    ctx.drawImage(
+      this.image,
+      this.positionX - this.radius,
+      this.positionY - this.radius,
+      this.radius * 2,
+      this.radius * 2,
+    );
   }
-}
-
-function randomNumberBetween(min, max) {
-  return Math.random() * (max - min) + min;
 }

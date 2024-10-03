@@ -11,7 +11,7 @@ import displayWinner from "../functions/displayWinner";
 import updateScore from "../functions/updateScore";
 import showToast from "../DOM/helpers/showToast";
 
-const gameServerHost = "127.0.0.1:5000";
+const gameServerHost = "pingpong-backend-hs1u.onrender.com";
 let lastTime;
 
 async function apiCall(url) {
@@ -23,14 +23,14 @@ async function apiCall(url) {
 }
 
 async function createGame() {
-  return apiCall(`http://${gameServerHost}/new_game`);
+  return apiCall(`https://${gameServerHost}/new_game`);
 }
 async function joinGame(gameId) {
-  return apiCall(`http://${gameServerHost}/join_game/${gameId}`);
+  return apiCall(`https://${gameServerHost}/join_game/${gameId}`);
 }
 
 async function getGameStatus(gameId) {
-  const response = await apiCall(`http://${gameServerHost}/status/${gameId}`);
+  const response = await apiCall(`https://${gameServerHost}/status/${gameId}`);
   return response.state;
 }
 
@@ -287,53 +287,69 @@ export default async function controllerMultiplayer(
   joining = false,
   maxRounds,
 ) {
-  try {
-    const data = await initializeGame(joining);
+  return new Promise(async (resolve) => {
+    // Return a promise
+    try {
+      const data = await initializeGame(joining);
+      if (data) {
+        const socket = io(`https://${gameServerHost}`, {
+          transports: ["websocket", "polling"],
+          query: { id: data.id },
+        });
+        socket.on("connect", async () => {
+          gameUI(data.id, socket);
+          const dialog = document.querySelector(".dialog");
 
-    if (data) {
-      const socket = io(`http://${gameServerHost}`, {
-        transports: ["websocket", "polling"],
-        query: { id: data.id },
-      });
-      gameUI(data.id, socket);
-      const dialog = document.querySelector(".dialog");
+          const canvas = document.querySelector(".canvas");
 
-      const canvas = document.querySelector(".canvas");
-      const ctx = canvas.getContext("2d"); // Gives me canvas workspace
+          const ctx = canvas.getContext("2d"); // Gives me canvas workspace
+          ctx.font = "48px serif";
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
 
-      const players = [];
-      initializePlayers(canvas, players, data);
+          const players = [];
+          initializePlayers(canvas, players, data);
 
-      players.forEach((player) => {
-        player.paddle.draw(ctx);
-      });
+          players.forEach((player) => {
+            player.paddle.draw(ctx);
+          });
 
-      const ball = new Ball(
-        { x: 0.75, y: 0.5 },
-        canvas.width / 2,
-        canvas.height / 2,
-        10,
-      );
+          const ball = new Ball(
+            { x: 0.75, y: 0.5 },
+            canvas.width / 2,
+            canvas.height / 2,
+            20,
+          );
 
-      const board = new Board(canvas, ctx, players, 0, ball, false, maxRounds);
+          const board = new Board(
+            canvas,
+            ctx,
+            players,
+            0,
+            ball,
+            false,
+            maxRounds,
+          );
 
-      updateScore(board);
-      ctx.font = "48px serif";
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-
-      socket.on("connect", async () => {
-        receiveUpdate(socket, board);
-        dialog.showModal();
-        await waitForActiveStatus(data.id);
-        dialog.close();
-        startCountdown(board, socket);
-      });
-      return { ok: true };
+          updateScore(board);
+          receiveUpdate(socket, board);
+          dialog.showModal();
+          await waitForActiveStatus(data.id);
+          dialog.close();
+          startCountdown(board, socket);
+          return { ok: true };
+        });
+        socket.on("connect_error", () => {
+          showToast("Connection failed", true);
+          resolve({ ok: false });
+        });
+      } else {
+        resolve({ ok: false });
+      }
+    } catch (error) {
+      resolve({ ok: false });
     }
-  } catch (error) {
-    return { ok: false };
-  }
+  });
 }
 
 function startCountdown(board, socket) {

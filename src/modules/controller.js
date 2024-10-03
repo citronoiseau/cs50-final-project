@@ -123,7 +123,7 @@ export default function controller(bot = false, rounds) {
     { x: 0.75, y: 0.5 },
     canvas.width / 2,
     canvas.height / 2,
-    10,
+    20,
   );
 
   const board = new Board(canvas, ctx, players, 0, ball, false, rounds);

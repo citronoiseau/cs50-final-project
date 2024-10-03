@@ -1,9 +1,9 @@
 /* eslint-disable no-param-reassign */
 export default function paddleController(player1, player2) {
   document.addEventListener("keydown", (e) => {
-    if (e.key === "w") {
+    if (e.keyCode === 87) {
       player1.paddle.direction = -1;
-    } else if (e.key === "s") {
+    } else if (e.keyCode === 83) {
       player1.paddle.direction = 1;
     }
     if (player2) {
@@ -16,7 +16,7 @@ export default function paddleController(player1, player2) {
   });
 
   document.addEventListener("keyup", (e) => {
-    if (e.key === "w" || e.key === "s") {
+    if (e.keyCode === 87 || e.keyCode === 83) {
       player1.paddle.direction = 0;
     }
     if (player2) {

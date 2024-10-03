@@ -22,6 +22,10 @@ export default function onlineMenu() {
     "onlineHeader",
     "Online game",
   );
+
+  const spinner = createElement(onlineMenuContainer, "div", "spinner");
+  spinner.style.display = "none";
+
   const buttonContainer = createElement(
     onlineMenuContainer,
     "div",
@@ -43,13 +47,16 @@ export default function onlineMenu() {
 
     if (dialogRounds.returnValue === "default") {
       try {
+        spinner.style.display = "block";
         const response = await controllerMultiplayer(false, rounds);
         if (!response.ok) {
           showToast("Please try again", true);
         }
       } catch (error) {
+        console.log(error);
         showToast("An error occurred", true);
       }
+      spinner.style.display = "none";
     }
   });
 
