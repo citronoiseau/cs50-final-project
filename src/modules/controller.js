@@ -3,15 +3,40 @@ import Ball from "../classes/ball";
 import Player from "../classes/player";
 import Paddle from "../classes/paddle";
 import gameUI from "../DOM/gameUI";
+import drawText from "../functions/drawText";
 
 import paddleController from "../functions/paddleController";
 import displayWinner from "../functions/displayWinner";
 import updateScore from "../functions/updateScore";
 
-let isPaused = true;
+let gameOver = false;
 let lastTime;
+let animationId;
+let countAnimationId;
+let countdownInterval;
+
+function stopGameLoop() {
+  if (countdownInterval) {
+    clearInterval(countdownInterval);
+    gameOver = true;
+    countdownInterval = null;
+  }
+  if (animationId) {
+    gameOver = true;
+    cancelAnimationFrame(animationId);
+    animationId = null; // Reset the animation ID
+  }
+  if (countAnimationId) {
+    gameOver = true;
+    cancelAnimationFrame(countAnimationId);
+    countAnimationId = null; // Reset the animation ID
+  }
+}
 
 function gameLoop(board, time) {
+  if (gameOver || board.isPaused) return;
+  const canvasCheck = document.querySelector(".canvas");
+  if (!canvasCheck) return;
   const { ctx } = board;
   const { canvas } = board;
   const player1 = board.players[0];
@@ -33,37 +58,41 @@ function gameLoop(board, time) {
   player1.paddle.draw(ctx);
   player2.paddle.draw(ctx);
 
-  if (!isPaused) {
-    ball.draw(ctx);
-    const isWin = ball.moveBall(canvas, player1, player2, delta);
-    if (isWin) {
-      isPaused = true;
-      board.updateRounds();
-      updateScore(board);
-      if (board.rounds === board.maxRounds) {
-        let winner;
-        if (player1.score > player2.score) {
-          winner = player1.name;
-        } else if (player1.score < player2.score) {
-          winner = player2.name;
-        } else {
-          winner = "It's a tie!";
-        }
-
-        displayWinner(winner, board.players);
-        return;
+  ball.draw(ctx);
+  const isWin = ball.moveBall(canvas, player1, player2, delta);
+  if (isWin) {
+    board.isPaused = true;
+    board.updateRounds();
+    updateScore(board);
+    if (board.rounds === board.maxRounds) {
+      let winner;
+      if (player1.score > player2.score) {
+        winner = player1.name;
+      } else if (player1.score < player2.score) {
+        winner = player2.name;
+      } else {
+        winner = "It's a tie!";
       }
 
-      startCountdown(board);
-      ball.reset(canvas);
-      player1.paddle.reset(canvas);
-      player2.paddle.reset(canvas);
+      stopGameLoop();
+      displayWinner(winner, board.players);
+      return;
     }
-    requestAnimationFrame((newTime) => gameLoop(board, newTime));
+
+    startCountdown(board);
+    ball.reset(canvas);
+    player1.paddle.reset(canvas);
+    player2.paddle.reset(canvas);
+  }
+  if (!board.isPaused) {
+    animationId = requestAnimationFrame((newTime) => gameLoop(board, newTime));
   }
 }
 
 function startCountdown(board) {
+  if (gameOver) return;
+  const canvasCheck = document.querySelector(".canvas");
+  if (!canvasCheck) return;
   let countdown = 3;
   const { ctx } = board;
   const { canvas } = board;
@@ -75,19 +104,19 @@ function startCountdown(board) {
   player2.paddle.draw(ctx);
 
   setTimeout(() => {
-    ctx.fillText(countdown, canvas.width / 2, canvas.height / 2);
-    const countdownInterval = setInterval(() => {
+    drawText(ctx, countdown, canvas.width / 2, canvas.height / 2);
+    countdownInterval = setInterval(() => {
       countdown -= 1;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       player1.paddle.draw(ctx);
       player2.paddle.draw(ctx);
 
       if (countdown > 0) {
-        ctx.fillText(countdown, canvas.width / 2, canvas.height / 2);
+        drawText(ctx, countdown, canvas.width / 2, canvas.height / 2);
       } else {
         clearInterval(countdownInterval);
-        isPaused = false;
-        requestAnimationFrame((time) => {
+        board.isPaused = false;
+        countAnimationId = requestAnimationFrame((time) => {
           lastTime = time;
           gameLoop(board, time);
         });
@@ -98,18 +127,27 @@ function startCountdown(board) {
 
 export default function controller(bot = false, rounds) {
   let gameStarted = false;
+  stopGameLoop();
   gameUI();
   const canvas = document.querySelector(".canvas");
   const ctx = canvas.getContext("2d"); // Gives me canvas workspace
 
-  const player1Paddle = new Paddle(40, canvas.height / 2 - 50, "left", 10, 100);
+  const player1Paddle = new Paddle(
+    40,
+    canvas.height / 2 - 50,
+    "left",
+    7,
+    40,
+    100,
+  );
   const player1 = new Player("player", "Player 1", player1Paddle, 0);
 
   const player2Paddle = new Paddle(
-    canvas.width - 50,
+    canvas.width - 80,
     canvas.height / 2 - 50,
     "right",
-    10,
+    7,
+    40,
     100,
   );
 
@@ -126,23 +164,21 @@ export default function controller(bot = false, rounds) {
     20,
   );
 
+  ball.reset(canvas);
+
   const board = new Board(canvas, ctx, players, 0, ball, false, rounds);
-  console.log(board);
   player1.paddle.draw(ctx);
   player2.paddle.draw(ctx);
   updateScore(board);
 
-  ctx.font = "48px serif";
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-
-  const text = "Press ENTER to start";
   const x = canvas.width / 2;
   const y = canvas.height / 2;
-  ctx.fillText(text, x, y);
+  drawText(ctx, "Press ENTER to start", x, y);
   paddleController(player1, player2);
+  updateScore(board);
   document.addEventListener("keypress", (e) => {
     if (e.key === "Enter" && !gameStarted) {
+      gameOver = false;
       gameStarted = true;
       startCountdown(board);
     }
