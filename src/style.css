@@ -23,7 +23,8 @@
 
 .startMenu,
 .localMenu,
-.onlineMenu {
+.onlineMenu,
+.gameContainer {
   background-image: url(images/space.jpg);
   background-repeat: no-repeat;
   background-size: cover;
@@ -32,6 +33,26 @@
   width: 100%;
   flex-direction: column;
   align-items: center;
+}
+
+.gameContainer {
+  justify-content: center;
+}
+
+.gameContainer * {
+  position: relative;
+  z-index: 2;
+}
+
+.gameContainer::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.7); /* Adjust the darkness level */
+  z-index: 1;
 }
 
 .startMenu .gameName,
@@ -70,7 +91,8 @@ button:active {
 }
 
 .footerContainer {
-  background-color: #fc5cafe2;
+  background-color: #fc5caf7d;
+  backdrop-filter: blur(10px);
   margin-top: auto;
   font-family: var(--font);
   width: 100%;
@@ -79,19 +101,23 @@ button:active {
   display: flex;
 }
 
-.gameContainer {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  margin: 15px;
+.canvasContainer {
+  position: relative;
+  width: 800px;
+  height: 400px;
+  outline: 15px solid black;
+  background-image: url("./images/background.jpg");
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-position: center;
 }
 
 .canvas {
-  border: 1px solid black;
+  position: absolute;
 }
 
 .toast {
-  font-family: "Inconsolata", monospace;
+  font-family: var(--font);
   visibility: hidden;
   max-width: 50%;
   margin: 0 auto;
@@ -108,7 +134,7 @@ button:active {
   box-shadow:
     rgba(60, 64, 67, 0.3) 0px 1px 2px 0px,
     rgba(60, 64, 67, 0.15) 0px 2px 6px 2px;
-  background-color: #174771;
+  background-color: #202f3b;
   color: #f6f5e3;
 }
 
@@ -145,8 +171,10 @@ button:active {
 }
 
 .dialog {
+  font-family: var(--font);
   top: 50%;
   left: 50%;
+  font-size: 1.1rem;
   overflow: visible;
   transform: translate(-50%, -50%);
   transition: opacity 0.4s ease-out;
@@ -156,22 +184,60 @@ button:active {
   box-shadow:
     rgba(60, 64, 67, 0.3) 0px 1px 2px 0px,
     rgba(60, 64, 67, 0.15) 0px 2px 6px 2px;
-  background-color: #202f3b;
+  background-color: #7c1f7c;
   color: #f6f5e3;
   flex-direction: column;
   gap: 15px;
   align-items: center;
 }
 
+.dialogContainer,
+.idContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.idContainer .gameId {
+  background-color: #bd3cbd;
+  padding: 5px 20px;
+  border-radius: 15px;
+  transition: all 0.2s ease-in-out;
+}
+.idContainer .gameId:hover {
+  background-color: #d972d9;
+}
+
+.dialogForm {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+.formElement {
+  display: flex;
+  gap: 7px;
+  flex-direction: column;
+}
+.formElement input {
+  padding: 5px 10px;
+}
+.dialog button {
+  font-size: 1.1rem;
+  width: 120px;
+  padding: 10px;
+}
+
 .gameId .tooltiptext {
   visibility: hidden;
   width: 160px;
-  background-color: #202f3b;
+  background-color: #bd3cbd;
   font-size: min(5vw, 1rem);
   color: #fefefe;
   text-align: center;
-  border-radius: 5px;
-  padding: 5px;
+  border-radius: 15px;
+  padding: 5px 10px;
   position: absolute;
   z-index: 1;
   bottom: 100%;
@@ -182,4 +248,47 @@ button:active {
 .gameId:hover .tooltiptext {
   visibility: visible;
   opacity: 1;
+}
+.controlsContainer {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  align-items: center;
+}
+.controlsHeader {
+  font-family: var(--header-font);
+  font-size: clamp(2rem, 5vw, 5rem);
+}
+.controls {
+  font-family: var(--font);
+  background-color: #fc5caf7d;
+  backdrop-filter: blur(10px);
+  display: flex;
+  flex-wrap: wrap;
+  margin-left: 20px;
+  padding: 10px;
+  border-radius: 15px;
+}
+.wsContainer,
+.arrowContainer {
+  display: flex;
+  align-items: center;
+  font-size: 1.2rem;
+}
+
+.buttonImageContainer {
+  width: 80px;
+  height: 80px;
+}
+.buttonImage {
+  width: auto;
+  height: 80px;
+}
+.arrowImage {
+  height: 70px;
+}
+dialog:-internal-dialog-in-top-layer::backdrop {
+  position: fixed;
+  inset: -20px; /* Increase the size beyond the viewport */
+  background: rgba(0, 0, 0, 0.3); /* Darker backdrop */
 }
