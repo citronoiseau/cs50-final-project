@@ -30,7 +30,7 @@ export default function createFooter(container) {
     footer,
     "div",
     "attributionText",
-    "Asteroid icons created by ",
+    "Icons created by ",
   );
 
   const attributionLink2 = document.createElement("a");

@@ -2,6 +2,7 @@ import localMenu from "./localMenu";
 import onlineMenu from "./onlineMenu";
 import createElement from "./helpers/create";
 import removeChildren from "./helpers/removeChildren";
+import createControls from "./helpers/controls";
 import createFooter from "./helpers/footer";
 
 const content = document.querySelector("#content");
@@ -39,6 +40,8 @@ export default function startMenu() {
   onlineGame.addEventListener("click", () => {
     onlineMenu();
   });
+
+  const controls = createControls(startMenuContainer);
 
   const footer = createFooter(startMenuContainer);
 }
