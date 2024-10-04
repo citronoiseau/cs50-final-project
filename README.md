@@ -43,7 +43,7 @@ app.py uses eventlet and simple cache to speed up the server. It keeps the game 
 Then there is the join game function, which again sets a unique id for another player. Then there is a status function, that uses using a function from gameInfo.py to tell the game if all players have joined already. 
 
 There starts the socket part. The first two functions are fairly simple, they just check connection and disconnection from the server. Then we have handle_left_player_update, which receives the game state from the host, such as 
-ball and paddle, but sometimes also rounds and winner. It's also locked, but to 120 fps this time, because I still want to improve server speed. There goes a similar function handle_right_player_update,
+ball and paddle, but sometimes also rounds and winner. It's also locked, but to 120 fps this time, because I still want to improve server speed. Also, to imrpove server speed I'm using binary compression, so that data could travel faster. There goes a similar function handle_right_player_update,
 but this time it just receives the right paddle update. The last one is used to check pauses to place a countdown between different rounds.
 
 
