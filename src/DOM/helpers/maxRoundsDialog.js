@@ -14,7 +14,14 @@ export function maxRoundsDialog(container) {
   const dialog = createElement(container, "dialog", "dialog");
   dialog.id = "maxRoundsDialog";
 
-  const closeButton = createElement(dialog, "button", "closeButton", "Close");
+  const dialogContainer = createElement(dialog, "div", "dialogContainer");
+
+  const closeButton = createElement(
+    dialogContainer,
+    "button",
+    "closeButton",
+    "Close",
+  );
 
   closeButton.addEventListener("click", () => {
     dialog.close();
@@ -22,16 +29,17 @@ export function maxRoundsDialog(container) {
 
   // eslint-disable-next-line no-unused-vars
   const dialogTitle = createElement(
-    dialog,
+    dialogContainer,
     "div",
     "dialogTitle",
     "Choose max rounds",
   );
 
   const dialogForm = document.createElement("form");
-  dialogForm.id = "gameIdForm";
+  dialogForm.id = "gameRoundsForm";
+  dialogForm.classList.add("dialogForm");
   dialogForm.method = "get";
-  dialog.appendChild(dialogForm);
+  dialogContainer.appendChild(dialogForm);
 
   const formElement = createElement(dialogForm, "div", "formElement");
 
@@ -46,6 +54,7 @@ export function maxRoundsDialog(container) {
   input.min = 3;
   input.max = 20;
   input.placeholder = "5";
+  input.value = "5";
   input.required = true;
 
   formElement.appendChild(label);
