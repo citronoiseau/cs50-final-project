@@ -2,18 +2,23 @@ import removeChildren from "./helpers/removeChildren";
 import createWaitDialog from "./helpers/waitingDialog";
 import createReturnButton from "./helpers/returnButton";
 import createElement from "./helpers/create";
+import showToast from "./helpers/showToast";
 
 const content = document.querySelector("#content");
 
 export default function gameUI(gameId, socket) {
   removeChildren(content);
-  const gameContainer = document.createElement("div");
-  gameContainer.classList.add("gameContainer");
-  content.appendChild(gameContainer);
+  const gameContainer = createElement(content, "div", "gameContainer");
+
+  const canvasContainer = createElement(
+    gameContainer,
+    "div",
+    "canvasContainer",
+  );
 
   const canvas = document.createElement("canvas");
   canvas.classList.add("canvas");
-  gameContainer.appendChild(canvas);
+  canvasContainer.appendChild(canvas);
   canvas.width = 800;
   canvas.height = 400;
 
@@ -36,6 +41,7 @@ export default function gameUI(gameId, socket) {
   returnButton.addEventListener("click", () => {
     if (socket) {
       socket.emit("leaveGame", () => {
+        showToast("You disconnected from the game");
         socket.disconnect();
       });
 
@@ -46,6 +52,7 @@ export default function gameUI(gameId, socket) {
   window.addEventListener("beforeunload", () => {
     if (socket) {
       socket.emit("leaveGame", () => {
+        showToast("You disconnected from the game");
         socket.disconnect();
       });
 
