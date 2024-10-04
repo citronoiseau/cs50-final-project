@@ -14,6 +14,7 @@
   "license": "ISC",
   "dependencies": {
     "html-webpack-plugin": "^5.6.0",
+    "msgpack-lite": "^0.1.26",
     "socket.io-client": "^4.8.0",
     "webpack-merge": "^5.10.0"
   },
