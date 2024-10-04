@@ -5,8 +5,9 @@ export default function updateScore(board) {
 
     scoreCtx.clearRect(0, 0, scoreCtx.canvas.width, scoreCtx.canvas.height);
 
-    scoreCtx.font = "30px Arial";
+    scoreCtx.font = "30px 'Ubuntu Mono', monospace";
     scoreCtx.textAlign = "center";
+    scoreCtx.fillStyle = "white";
 
     scoreCtx.fillText(
       `${board.players[0].name}: ${board.players[0].score}`,

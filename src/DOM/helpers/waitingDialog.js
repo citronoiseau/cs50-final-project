@@ -1,13 +1,16 @@
 /* eslint-disable no-unused-vars */
 import createElement from "./create";
 import showToast from "./showToast";
+import startMenu from "../startMenu";
 
 export default function createWaitDialog(gameId) {
   const menu = document.querySelector(".gameContainer");
 
   const dialog = createElement(menu, "dialog", "dialog");
 
-  const idContainer = createElement(dialog, "div", "idContainer");
+  const dialogContainer = createElement(dialog, "div", "dialogContainer");
+
+  const idContainer = createElement(dialogContainer, "div", "idContainer");
 
   const idText = createElement(idContainer, "div", "idText", "Your game id:");
   const id = createElement(idContainer, "div", "gameId", `${gameId}`);
@@ -32,13 +35,26 @@ export default function createWaitDialog(gameId) {
   );
 
   const dialogText = createElement(
-    dialog,
+    dialogContainer,
     "div",
     "dialogTitle",
     "Waiting for other player...",
   );
 
-  const spinner = createElement(dialog, "div", "spinner");
+  const spinner = createElement(dialogContainer, "div", "spinner");
+
+  const cancelButton = createElement(
+    dialogContainer,
+    "button",
+    "closeButton",
+    "Cancel",
+  );
+
+  cancelButton.addEventListener("click", () => {
+    dialog.close();
+    startMenu();
+    showToast("You disconnected from the game");
+  });
 
   return dialog;
 }

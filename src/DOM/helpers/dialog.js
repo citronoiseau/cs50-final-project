@@ -8,7 +8,14 @@ export default function joinGameDialog() {
   const dialog = createElement(menu, "dialog", "dialog");
   dialog.id = "joinGameDialog";
 
-  const closeButton = createElement(dialog, "button", "closeButton", "Close");
+  const dialogContainer = createElement(dialog, "div", "dialogContainer");
+
+  const closeButton = createElement(
+    dialogContainer,
+    "button",
+    "closeButton",
+    "Close",
+  );
 
   closeButton.addEventListener("click", () => {
     dialog.close();
@@ -16,7 +23,7 @@ export default function joinGameDialog() {
 
   // eslint-disable-next-line no-unused-vars
   const dialogTitle = createElement(
-    dialog,
+    dialogContainer,
     "div",
     "dialogTitle",
     "Enter game id",
@@ -25,7 +32,8 @@ export default function joinGameDialog() {
   const dialogForm = document.createElement("form");
   dialogForm.id = "gameIdForm";
   dialogForm.method = "get";
-  dialog.appendChild(dialogForm);
+  dialogForm.classList.add("dialogForm");
+  dialogContainer.appendChild(dialogForm);
 
   const formElement = createElement(dialogForm, "div", "formElement");
 
