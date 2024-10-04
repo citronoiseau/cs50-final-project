@@ -50,10 +50,12 @@ export default function onlineMenu() {
         spinner.style.display = "block";
         const response = await controllerMultiplayer(false, rounds);
         if (!response.ok) {
-          showToast("Please try again", true);
+          showToast(
+            "Server is asleep. Please try again in a few minutes",
+            true,
+          );
         }
       } catch (error) {
-        console.log(error);
         showToast("An error occurred", true);
       }
       spinner.style.display = "none";

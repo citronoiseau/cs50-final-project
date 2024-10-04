@@ -1,4 +1,5 @@
 import { io } from "socket.io-client";
+import msgpack from "msgpack-lite";
 
 import Board from "../classes/board";
 import Ball from "../classes/ball";
@@ -10,10 +11,11 @@ import paddleController from "../functions/paddleController";
 import displayWinner from "../functions/displayWinner";
 import updateScore from "../functions/updateScore";
 import showToast from "../DOM/helpers/showToast";
+import drawText from "../functions/drawText";
 
 const gameServerHost = "pingpong-backend-hs1u.onrender.com";
 let lastTime;
-const targetFPS = 40;
+const targetFPS = 59;
 const frameDuration = 1000 / targetFPS; // 16.67 ms per frame
 
 async function apiCall(url) {
@@ -51,7 +53,9 @@ function receiveUpdate(socket, board) {
   const player2 = board.players[1];
   const { ball } = board;
 
-  socket.on("game_state_updated", (data) => {
+  socket.on("game_state_updated", (packedData) => {
+    const data = msgpack.decode(new Uint8Array(packedData));
+
     if (player2.type === "server") {
       if (data.right_paddle !== undefined) {
         if (!board.isPaused) {
@@ -94,7 +98,10 @@ function receiveUpdate(socket, board) {
     } else {
       winner = "It's a tie!";
     }
-    showToast("Player disconnected");
+    const checkCanvas = document.querySelector(".canvas");
+    if (checkCanvas != null) {
+      showToast("Other player disconnected :(");
+    }
     board.setWinner(winner);
     displayWinner(winner, board.players);
 
@@ -124,7 +131,6 @@ function sendUpdate(socket, board, ball, player1, player2) {
       scores: [player1.score, player2.score],
       winner: board.winner.name || board.winner,
     };
-    console.log(`Sending Update - Scores: ${gameState.scores}`);
     socket.emit("update_game_state_left", gameState);
   } else if (player1.type === "server") {
     const gameState = {
@@ -147,7 +153,14 @@ function gameLoop(board, socket, time) {
   if (board.isPaused) {
     return;
   }
+  const checkCanvas = document.querySelector(".canvas");
+  if (checkCanvas == null) {
+    socket.emit("leaveGame", () => {
+      socket.disconnect();
+    });
 
+    setTimeout(() => socket.disconnect(), 100);
+  }
   const delta = time - lastTime;
 
   // Only update and render if enough time has passed to maintain 60 FPS
@@ -231,10 +244,10 @@ function initializePlayers(canvas, players, data) {
       40,
       canvas.height / 2 - 50,
       "left",
-      10,
+      15,
+      40,
       100,
     );
-
     const player1 = new Player(
       `${data.player.type}`,
       `${data.player.name}`,
@@ -243,10 +256,11 @@ function initializePlayers(canvas, players, data) {
     );
 
     const player2Paddle = new Paddle(
-      canvas.width - 50,
+      canvas.width - 80,
       canvas.height / 2 - 50,
       "right",
-      10,
+      15,
+      40,
       100,
     );
 
@@ -257,10 +271,11 @@ function initializePlayers(canvas, players, data) {
     paddleController(player1);
   } else if (data.player.type === "guest") {
     const player2Paddle = new Paddle(
-      canvas.width - 50,
+      canvas.width - 80,
       canvas.height / 2 - 50,
       "right",
-      10,
+      15,
+      40,
       100,
     );
 
@@ -275,7 +290,8 @@ function initializePlayers(canvas, players, data) {
       40,
       canvas.height / 2 - 50,
       "left",
-      10,
+      15,
+      40,
       100,
     );
 
@@ -298,7 +314,7 @@ export default async function controllerMultiplayer(
       const data = await initializeGame(joining);
       if (data) {
         const socket = io(`https://${gameServerHost}`, {
-          transports: ["websocket", "polling"],
+          transports: ["websocket"],
           query: { id: data.id },
         });
         socket.on("connect", async () => {
@@ -308,7 +324,7 @@ export default async function controllerMultiplayer(
           const canvas = document.querySelector(".canvas");
 
           const ctx = canvas.getContext("2d"); // Gives me canvas workspace
-          ctx.font = "48px serif";
+          ctx.font = "48px 'Honk', 'Ubuntu Mono', monospace";
           ctx.textAlign = "center";
           ctx.textBaseline = "middle";
 
@@ -371,7 +387,7 @@ function startCountdown(board, socket) {
   player2.paddle.draw(ctx);
 
   setTimeout(() => {
-    ctx.fillText(countdown, canvas.width / 2, canvas.height / 2);
+    drawText(ctx, countdown, canvas.width / 2, canvas.height / 2);
     const countdownInterval = setInterval(() => {
       countdown -= 1;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -379,7 +395,7 @@ function startCountdown(board, socket) {
       player2.paddle.draw(ctx);
 
       if (countdown > 0) {
-        ctx.fillText(countdown, canvas.width / 2, canvas.height / 2);
+        drawText(ctx, countdown, canvas.width / 2, canvas.height / 2);
       } else {
         board.isPaused = false;
         sendPauseUpdate(board, socket);
